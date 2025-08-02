@@ -3,7 +3,7 @@ import axiosInstance from '../lib/axiosInstance';
 import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
 
-const BaseURL = 'http://localhost:5001';
+const BaseURL = 'http://localhost:5001'; // Update if needed
 
 const normalizeUser = (user) => ({
   ...user,
@@ -23,19 +23,12 @@ export const useAuthStore = create((set, get) => ({
   signup: async (formData) => {
     set({ isSigningUp: true });
     try {
-      console.log('📝 Attempting signup...', axiosInstance.defaults.baseURL);
       const res = await axiosInstance.post('/auth/signup', formData);
-      console.log('✅ Signup successful:', res.data);
       set({ authUser: normalizeUser(res.data.user) });
       toast.success('Account created successfully!');
       get().connectSocket();
     } catch (error) {
-      console.error('❌ Signup failed:', error.response?.data || error.message);
-      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
-        toast.error('Cannot connect to server. Please check if backend is running.');
-      } else {
-        toast.error(error.response?.data?.message || 'Signup failed');
-      }
+      toast.error(error.response?.data?.message || 'Signup failed');
     } finally {
       set({ isSigningUp: false });
     }
@@ -44,19 +37,12 @@ export const useAuthStore = create((set, get) => ({
   login: async (formData) => {
     set({ isLoggingIn: true });
     try {
-      console.log('🔐 Attempting login...', axiosInstance.defaults.baseURL);
       const res = await axiosInstance.post('/auth/login', formData);
-      console.log('✅ Login successful:', res.data);
       set({ authUser: normalizeUser(res.data.user) });
       toast.success('Logged in successfully!');
       get().connectSocket();
     } catch (error) {
-      console.error('❌ Login failed:', error.response?.data || error.message);
-      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
-        toast.error('Cannot connect to server. Please check if backend is running.');
-      } else {
-        toast.error(error.response?.data?.message || 'Login failed');
-      }
+      toast.error(error.response?.data?.message || 'Login failed');
     } finally {
       set({ isLoggingIn: false });
     }
@@ -65,21 +51,13 @@ export const useAuthStore = create((set, get) => ({
   checkAuth: async () => {
     set({ isCheckingAuth: true });
     try {
-      console.log('🔍 Checking auth...', axiosInstance.defaults.baseURL);
       const res = await axiosInstance.get('/auth/check');
-      console.log('✅ Auth check successful:', res.data);
       set({ authUser: normalizeUser(res.data.user) });
       get().connectSocket();
     } catch (error) {
-      console.log('❌ Auth check failed:', error.response?.data || error.message);
       if (error.response?.status === 401) {
-        console.log('🔓 User not authenticated');
         set({ authUser: null });
-      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
-        console.error('🌐 Network error - backend might not be running');
-        toast.error('Cannot connect to server. Please check if backend is running.');
       } else {
-        console.error('🚨 Other error:', error);
         toast.error(error.response?.data?.message || 'Auth check failed');
       }
     } finally {
@@ -93,7 +71,7 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: null, onlineUsers: [] });
       toast.success('Logged out successfully!');
       get().disconnectSocket();
-    } catch (error) {
+    } catch {
       toast.error('Logout failed');
     }
   },
@@ -101,33 +79,24 @@ export const useAuthStore = create((set, get) => ({
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
-      console.log('🔄 Updating profile...', axiosInstance.defaults.baseURL);
       const res = await axiosInstance.put('/auth/update-profile', data);
-      console.log('✅ Profile update successful:', res.data);
-      
-      // Update the auth user with the response data from backend
+
       if (res.data.user) {
         set({ authUser: normalizeUser(res.data.user) });
       } else {
-        // Fallback to updating with the sent data
         const currentUser = get().authUser;
-        set({ 
+        set({
           authUser: {
             ...currentUser,
             ...data,
-            profilePic: data.profilePic || currentUser.profilePic
-          }
+            profilePic: data.profilePic || currentUser.profilePic,
+          },
         });
       }
-      
+
       toast.success('Profile updated successfully!');
     } catch (error) {
-      console.error('❌ Profile update failed:', error.response?.data || error.message);
-      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
-        toast.error('Cannot connect to server. Please check if backend is running.');
-      } else {
-        toast.error(error.response?.data?.message || 'Profile update failed');
-      }
+      toast.error(error.response?.data?.message || 'Profile update failed');
     } finally {
       set({ isUpdatingProfile: false });
     }
@@ -142,11 +111,26 @@ export const useAuthStore = create((set, get) => ({
     });
 
     socketv.on('connect', () => {
-      console.log('Socket connected:', socketv.id);
+      console.log('✅ Socket connected:', socketv.id);
     });
 
-    socketv.on('getOnlineUsers', (usersIds) => {
-      set({ onlineUsers: usersIds });
+    // Receive full online users list
+    socketv.on('getOnlineUsers', (userIds) => {
+      set({ onlineUsers: userIds });
+    });
+
+    // User came online
+    socketv.on('user-online', (userId) => {
+      set((state) => ({
+        onlineUsers: [...new Set([...state.onlineUsers, userId])],
+      }));
+    });
+
+    // User went offline
+    socketv.on('user-offline', (userId) => {
+      set((state) => ({
+        onlineUsers: state.onlineUsers.filter((id) => id !== userId),
+      }));
     });
 
     set({ socket: socketv });
@@ -161,5 +145,5 @@ export const useAuthStore = create((set, get) => ({
   },
 }));
 
-// Automatically check auth once on app load
+// ✅ Auto-check auth once on app load
 useAuthStore.getState().checkAuth();
