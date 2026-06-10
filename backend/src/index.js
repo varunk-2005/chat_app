@@ -5,7 +5,7 @@ import cors from 'cors';
 import { connectDB } from './lib/db.js';
 
 import authRoutes from './routes/auth.routes.js';
-import userRoutes from './routes/user.routes.js'; // ✅ Correct path
+import userRoutes from './routes/user.routes.js'; 
 import messagesRoutes from './routes/message.route.js';
 import {app,server} from './lib/socket.js';
 dotenv.config();
@@ -13,7 +13,7 @@ dotenv.config();
 app.use(cookieParser());
 app.use(express.json());
 app.use(cors({
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173","chat-app-nine-zeta-90.vercel.app"],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
@@ -27,7 +27,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes); // ✅ Include it
+app.use("/api/users", userRoutes); 
 app.use("/api/messages", messagesRoutes);
 
 // Server
