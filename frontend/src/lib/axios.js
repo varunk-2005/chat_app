@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 export const axiosInstance = axios.create({
-    baseURL:'http://localhost:5001/api',
+    baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001/api',
+    withCredentials: true,
     isSigningUP: false,
     isloggingIn: false,
     isUpdatingProfile: false,
