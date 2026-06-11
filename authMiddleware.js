@@ -1,35 +1,69 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/userModel.js'; // Assuming a User model exists
+import bcrypt from 'bcryptjs';
+import User from '../models/userModel.js';
 
-const protect = async (req, res, next) => {
-  let token;
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
+export const signup = async (req, res) => {
+  const { fullName, email, password } = req.body;
+  try {
+    if (!fullName || !email || !password)
+      return res.status(400).json({ message: 'All fields are required' });
 
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (password.length < 6)
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
 
-      // Get user from the token (payload has user id)
-      // The select('-password') is to exclude the password hash.
-      req.user = await User.findById(decoded.id).select('-password');
+    const userExists = await User.findOne({ email });
+    if (userExists)
+      return res.status(400).json({ message: 'Email already exists' });
 
-      if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
-      }
+    const hashedPassword = await bcrypt.hash(password, await bcrypt.genSalt(10));
+    const user = await User.create({ fullName, email, password: hashedPassword });
 
-      next();
-    } catch (error) {
-      console.error(error);
-      return res.status(401).json({ message: 'Not authorized, token failed' });
-    }
-  }
-
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(201).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profilePic: user.profilePic,
+      token: generateToken(user._id),  // ← token in body
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-export { protect };
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    if (!email || !password)
+      return res.status(400).json({ message: 'All fields are required' });
+
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password)))
+      return res.status(401).json({ message: 'Invalid email or password' });
+
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profilePic: user.profilePic,
+      token: generateToken(user._id),  // ← token in body
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const logout = (req, res) => {
+  res.status(200).json({ message: 'Logged out successfully' });
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    res.status(200).json(req.user);
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
