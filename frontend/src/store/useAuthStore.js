@@ -3,7 +3,7 @@ import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
 
-const BaseURL = 'http://localhost:5001'; // Update if needed
+const BaseURL = 'https://chat-backend-uv9f.onrender.com'; // Update if needed
 
 const normalizeUser = (user) => ({
   ...user,
