@@ -16,7 +16,7 @@ export function getReceiverSocketId(userId) {
 // Initialize Socket.IO server with CORS config
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"], // Adjust to your frontend URL(s)
+    origin: ['https://chat-app-nine-zeta-90.vercel.app'], // Adjust to your frontend URL(s)
     credentials: true,
   },
 });
