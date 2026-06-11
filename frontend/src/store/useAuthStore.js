@@ -24,6 +24,7 @@ export const useAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post('/auth/signup', formData);
+      localStorage.setItem('token', res.data.token); // ← ADD THIS
       set({ authUser: normalizeUser(res.data.user) });
       toast.success('Account created successfully!');
       get().connectSocket();
@@ -38,6 +39,7 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post('/auth/login', formData);
+      localStorage.setItem('token', res.data.token); // ← ADD THIS
       set({ authUser: normalizeUser(res.data.user) });
       toast.success('Logged in successfully!');
       get().connectSocket();
@@ -47,6 +49,7 @@ export const useAuthStore = create((set, get) => ({
       set({ isLoggingIn: false });
     }
   },
+
 
   checkAuth: async () => {
     set({ isCheckingAuth: true });
@@ -68,6 +71,7 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     try {
       await axiosInstance.post('/auth/logout');
+      localStorage.removeItem('token'); // ← ADD THIS
       set({ authUser: null, onlineUsers: [] });
       toast.success('Logged out successfully!');
       get().disconnectSocket();
