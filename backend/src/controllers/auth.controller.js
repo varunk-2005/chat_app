@@ -17,18 +17,13 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = bcrypt.hashSync(password, 10);
-
-    const newUser = new User({
-      email,
-      fullname: fullName,
-      password: hashedPassword,
-    });
-
+    const newUser = new User({ email, fullname: fullName, password: hashedPassword });
     const savedUser = await newUser.save();
-    generateToken(newUser._id, res);
+    const token = generateToken(savedUser._id);
 
     return res.status(201).json({
       message: "User created successfully",
+      token,
       user: {
         _id: savedUser._id,
         email: savedUser.email,
@@ -56,10 +51,11 @@ export const login = async (req, res) => {
     if (!isPasswordValid)
       return res.status(400).json({ message: "Invalid email or password" });
 
-    generateToken(user._id, res);
+    const token = generateToken(user._id);
 
     return res.status(200).json({
       message: "Login successful",
+      token,
       user: {
         _id: user._id,
         email: user.email,
@@ -75,18 +71,7 @@ export const login = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  try {
-    res.cookie('jwt', '', {
-      maxAge: 0,
-      httpOnly: true,
-      sameSite: 'none', // ← FIX: was missing these
-      secure: true,
-    });
-    return res.status(200).json({ message: "Logout successful" });
-  } catch (error) {
-    console.error("Logout error:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
+  return res.status(200).json({ message: "Logout successful" });
 };
 
 export const updateProfile = async (req, res) => {
