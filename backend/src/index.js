@@ -13,7 +13,13 @@ dotenv.config();
 app.use(cookieParser());
 app.use(express.json());
 app.use(cors({
-  origin: 'https://chat-app-nine-zeta-90.vercel.app',
+  origin: (origin, callback) => {
+    if (!origin || origin === 'http://localhost:5173' || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
