@@ -105,7 +105,7 @@ export const useAuthStore = create((set, get) => ({
 
   connectSocket: () => {
     const { authUser, socket } = get();
-    if (!authUser || socket?.connected) return;
+    if (!authUser || socket) return;
 
     const socketv = io(BaseURL, {
       query: { userId: authUser._id },
