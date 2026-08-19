@@ -63,7 +63,7 @@ const ChatContainer = () => {
           return (
             <div
               key={message._id}
-              className={`chat ${isOwnMessage ? "chat-start" : "chat-end"}`}
+              className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
               ref={isLast ? messageEndRef : null}
             >
               <div className="chat-image avatar">
